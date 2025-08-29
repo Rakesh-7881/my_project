@@ -27,7 +27,7 @@ pipeline {
           PID=$(pgrep -f "java .*HelloWorldServer" || true)
           if [ -n "$PID" ]; then
             echo "Stopping old process $PID"
-            kill $PID || true
+            sudo kill $PID || true
             sleep 2
           else
             echo "No existing HelloWorldServer process found"
@@ -39,8 +39,8 @@ pipeline {
     stage('Build') {
       steps {
         sh '''
-          rm -rf ${OUT_DIR}
-          mkdir -p ${OUT_DIR}
+          sudo rm -rf ${OUT_DIR}
+          sudo mkdir -p ${OUT_DIR}
           javac ${APP_FILE} -d ${OUT_DIR}
         '''
       }
