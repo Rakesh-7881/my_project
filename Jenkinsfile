@@ -1,28 +1,25 @@
 pipeline {
-    agent any
-
-    tools {
-        // Use the JDK you configured in Global Tool Config (example: JDK11)
-        jdk "JDK11"
+  agent {
+    docker { image 'openjdk:11' } // uses OpenJDK 11 container on the agent
+  }
+  stages {
+    stage('Checkout') {
+      steps { checkout scm }
     }
-
-    stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main', url: 'https://github.com/Rakesh-7881/my_project.git'
-            }
-        }
-
-        stage('Compile') {
-            steps {
-                sh 'javac HelloWorld.java'
-            }
-        }
-
-        stage('Run') {
-            steps {
-                sh 'nohup java HelloWorld > app.log 2>&1 &'
-            }
-        }
+    stage('Compile') {
+      steps {
+        sh 'javac HelloWorld.java'
+      }
     }
+    stage('Run') {
+      steps {
+        sh 'java HelloWorld'           // prints Hello, World! to console
+      }
+    }
+  }
+  post {
+    always {
+      archiveArtifacts artifacts: '**/*.class', fingerprint: true
+    }
+  }
 }
