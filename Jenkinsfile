@@ -1,39 +1,75 @@
 pipeline {
-    agent any
+  agent any
 
-    stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main', url: 'https://github.com/Rakesh-7881/my_project.git'
-            }
-        }
+  environment {
+    APP_PORT = "9090"
+    APP_FILE = "HelloWorldServer.java"
+    OUT_DIR  = "out"
+  }
 
-        stage('Build') {
-            steps {
-                sh '''
-                  rm -rf out
-                  mkdir -p out
-                  javac HelloWorldServer.java -d out
-                '''
-            }
-        }
-
-        stage('Deploy (start)') {
-            steps {
-                sh '''
-                  # Kill existing HelloWorldServer if running
-                  PID=$(pgrep -f "java .*HelloWorldServer" || true)
-                  if [ -n "$PID" ]; then
-                    echo "Killing existing HelloWorldServer with PID $PID"
-                    kill -9 $PID
-                  else
-                    echo "No existing HelloWorldServer process found"
-                  fi
-
-                  # Start new one in background
-                  nohup java -cp out HelloWorldServer 9090 > app.log 2>&1 &
-                '''
-            }
-        }
+  stages {
+    stage('Clean Workspace') {
+      steps {
+        // Wipe old files from Jenkins workspace
+        cleanWs()
+      }
     }
+
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Stop old process') {
+      steps {
+        sh '''
+          PID=$(pgrep -f "java .*HelloWorldServer" || true)
+          if [ -n "$PID" ]; then
+            echo "Stopping old process $PID"
+            kill $PID || true
+            sleep 2
+          else
+            echo "No existing HelloWorldServer process found"
+          fi
+        '''
+      }
+    }
+
+    stage('Build') {
+      steps {
+        sh '''
+          rm -rf ${OUT_DIR}
+          mkdir -p ${OUT_DIR}
+          javac ${APP_FILE} -d ${OUT_DIR}
+        '''
+      }
+    }
+
+    stage('Deploy (start)') {
+      steps {
+        sh '''
+          nohup java -cp ${OUT_DIR} HelloWorldServer ${APP_PORT} > app.log 2>&1 &
+          sleep 2
+          echo "Started new process:"
+          pgrep -a -f "java .*HelloWorldServer" || true
+        '''
+      }
+    }
+
+    stage('Verify') {
+      steps {
+        sh '''
+          echo "HTTP response from server:"
+          curl -sS http://localhost:${APP_PORT}/ || true
+        '''
+      }
+    }
+  }
+
+  post {
+    always {
+      archiveArtifacts artifacts: 'app.log', allowEmptyArchive: true
+    }
+  }
 }
