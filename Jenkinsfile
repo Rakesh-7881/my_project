@@ -1,27 +1,28 @@
 pipeline {
     agent any
 
+    tools {
+        // Use the JDK you configured in Global Tool Config (example: JDK11)
+        jdk "JDK11"
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/Rakesh-7881/my_project.git'
+                git branch: 'main', url: 'https://github.com/<your-repo>.git'
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Compile') {
             steps {
-                sh 'pip3 install -r requirements.txt'
+                sh 'javac HelloWorld.java'
             }
         }
 
-        stage('Deploy WebApp') {
+        stage('Run') {
             steps {
-                // Kill old process if running
-                sh "pkill -f app.py || true"
-                // Run Flask app in background
-                sh "nohup python3 app.py > app.log 2>&1 &"
+                sh 'nohup java HelloWorld > app.log 2>&1 &'
             }
         }
     }
 }
-
