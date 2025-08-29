@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     tools {
-        // This will use the Maven you configured in Jenkins (Manage Jenkins → Global Tool Configuration)
         maven 'Maven'
     }
 
@@ -13,18 +12,15 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build with Maven') {
             steps {
-                sh 'mvn clean install'
+                sh 'mvn clean package'
             }
         }
 
-        stage('Run Java App') {
+        stage('Run App') {
             steps {
-                sh '''
-                    javac HelloWorld.java
-                    nohup java HelloWorld > app.log 2>&1 &
-                '''
+                sh 'java -cp target/classes HelloWorld'
             }
         }
     }
