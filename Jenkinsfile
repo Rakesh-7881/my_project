@@ -1,25 +1,31 @@
 pipeline {
-  agent {
-    docker { image 'openjdk:11' } // uses OpenJDK 11 container on the agent
-  }
-  stages {
-    stage('Checkout') {
-      steps { checkout scm }
+    agent any
+
+    tools {
+        // This will use the Maven you configured in Jenkins (Manage Jenkins → Global Tool Configuration)
+        maven 'Maven'
     }
-    stage('Compile') {
-      steps {
-        sh 'javac HelloWorld.java'
-      }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Rakesh-7881/my_project.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'mvn clean install'
+            }
+        }
+
+        stage('Run Java App') {
+            steps {
+                sh '''
+                    javac HelloWorld.java
+                    nohup java HelloWorld > app.log 2>&1 &
+                '''
+            }
+        }
     }
-    stage('Run') {
-      steps {
-        sh 'java HelloWorld'           // prints Hello, World! to console
-      }
-    }
-  }
-  post {
-    always {
-      archiveArtifacts artifacts: '**/*.class', fingerprint: true
-    }
-  }
 }
