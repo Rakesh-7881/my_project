@@ -49,7 +49,7 @@ pipeline {
     stage('Deploy (start)') {
       steps {
         sh '''
-          nohup java -cp ${OUT_DIR} HelloWorldServer ${APP_PORT} > app.log 2>&1 &
+          nohup sudo java -cp ${OUT_DIR} HelloWorldServer ${APP_PORT} > app.log 2>&1 &
           sleep 2
           echo "Started new process:"
           pgrep -a -f "java .*HelloWorldServer" || true
