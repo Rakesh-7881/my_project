@@ -27,7 +27,7 @@ pipeline {
 
     post {
         success {
-            echo "✅ Deployed! Access at http://<jenkins-ip>:9090/"
+            echo "✅ Deployed! Access at http://172.178.13.187/:9090/"
         }
     }
 }
