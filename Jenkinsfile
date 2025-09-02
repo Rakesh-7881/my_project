@@ -1,75 +1,33 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    APP_PORT = "9090"
-    APP_FILE = "HelloWorldServer.java"
-    OUT_DIR  = "out"
-  }
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/<your-username>/java-helloworld.git'
+            }
+        }
 
-  stages {
-    stage('Clean Workspace') {
-      steps {
-        // Wipe old files from Jenkins workspace
-        cleanWs()
-      }
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh '''
+                  pkill -f "HelloWorldServer" || true
+                  nohup java -cp target/helloworld-1.0-jar-with-dependencies.jar com.example.HelloWorldServer > app.log 2>&1 &
+                  sleep 2
+                '''
+            }
+        }
     }
 
-    stage('Checkout') {
-      steps {
-        checkout scm
-      }
+    post {
+        success {
+            echo "✅ Deployed! Access at http://<jenkins-ip>:9090/"
+        }
     }
-
-    stage('Stop old process') {
-      steps {
-        sh '''
-          PID=$(pgrep -f "java .*HelloWorldServer" || true)
-          if [ -n "$PID" ]; then
-            echo "Stopping old process $PID"
-            sudo kill $PID || true
-            sleep 2
-          else
-            echo "No existing HelloWorldServer process found"
-          fi
-        '''
-      }
-    }
-
-    stage('Build') {
-      steps {
-        sh '''
-          sudo rm -rf ${OUT_DIR}
-          sudo mkdir -p ${OUT_DIR}
-          javac ${APP_FILE} -d ${OUT_DIR}
-        '''
-      }
-    }
-
-    stage('Deploy (start)') {
-      steps {
-        sh '''
-          nohup sudo java -cp ${OUT_DIR} HelloWorldServer ${APP_PORT} > app.log 2>&1 &
-          sleep 2
-          echo "Started new process:"
-          pgrep -a -f "java .*HelloWorldServer" || true
-        '''
-      }
-    }
-
-    stage('Verify') {
-      steps {
-        sh '''
-          echo "HTTP response from server:"
-          curl -sS http://localhost:${APP_PORT}/ || true
-        '''
-      }
-    }
-  }
-
-  post {
-    always {
-      archiveArtifacts artifacts: 'app.log', allowEmptyArchive: true
-    }
-  }
 }
