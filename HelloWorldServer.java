@@ -13,7 +13,7 @@ public class HelloWorldServer {
             out.println("HTTP/1.1 200 OK");
             out.println("Content-Type: text/html");
             out.println();
-            out.println("<h1>Hello Rakesh Jenkins Deployment done..</h1>");
+            out.println("<h1>Hello Rakesh Jenkins Deployment Sucsess</h1>");
             out.flush();
             client.close();
         }
