@@ -20,23 +20,35 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                powershell '''
-                  Set-Location "C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\Test"
+        powershell '''
+          Set-Location "C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\Test"
 
-                  # Kill old process on port 9090
-                  Get-NetTCPConnection -LocalPort $env:APP_PORT -ErrorAction SilentlyContinue | ForEach-Object {
-                      Stop-Process -Id $_.OwningProcess -Force
-                  }
+          # Kill old process on port 9090
+          Get-NetTCPConnection -LocalPort $env:APP_PORT -ErrorAction SilentlyContinue | ForEach-Object {
+              Stop-Process -Id $_.OwningProcess -Force
+          }
 
-                  # Start new process
-                  Start-Process java -ArgumentList "-cp", "out", "HelloWorldServer", $env:APP_PORT -NoNewWindow
+          # Start new process
+          Start-Process java -ArgumentList "-cp", "out", "HelloWorldServer", $env:APP_PORT -NoNewWindow
+          Start-Sleep -Seconds 5
+          Write-Output "Server started on http://localhost:$env:APP_PORT (first run)"
 
-                  # Small wait
-                  Start-Sleep -Seconds 5
+          # Simulate wait before restart (1 minute)
+          Write-Output "Waiting 60 seconds before restart..."
+          Start-Sleep -Seconds 60
 
-                  Write-Output "Server started on http://localhost:$env:APP_PORT"
-                '''
-            }
+          # Kill again (in case updated file is detected)
+          Get-NetTCPConnection -LocalPort $env:APP_PORT -ErrorAction SilentlyContinue | ForEach-Object {
+              Stop-Process -Id $_.OwningProcess -Force
+          }
+
+          # Start process again
+          Start-Process java -ArgumentList "-cp", "out", "HelloWorldServer", $env:APP_PORT -NoNewWindow
+          Start-Sleep -Seconds 5
+          Write-Output "Server restarted on http://localhost:$env:APP_PORT (second run)"
+        '''
         }
+      }
+
     }
 }
