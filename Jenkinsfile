@@ -1,33 +1,40 @@
 pipeline {
     agent any
 
+    environment {
+        APP_PORT = "9090"
+        OUT_DIR  = "out"
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/Rakesh-7881/my_project.git'
+                git branch: 'main', url: 'https://github.com/your-username/java-helloworld-server.git'
             }
         }
 
-        stage('Build') {
+        stage('Compile') {
             steps {
-                sh 'mvn clean package'
+                sh '''
+                  mkdir -p ${OUT_DIR}
+                  javac -d ${OUT_DIR} HelloWorldServer.java
+                '''
             }
         }
 
         stage('Deploy') {
             steps {
                 sh '''
+                  # Kill old process if running
                   pkill -f "HelloWorldServer" || true
-                  nohup java -cp target/helloworld-1.0-jar-with-dependencies.jar com.example.HelloWorldServer > app.log 2>&1 &
-                  sleep 2
+
+                  # Start new server
+                  nohup java -cp ${OUT_DIR} HelloWorldServer ${APP_PORT} > app.log 2>&1 &
+
+                  sleep 3
+                  echo "Server running on port ${APP_PORT}"
                 '''
             }
-        }
-    }
-
-    post {
-        success {
-            echo "✅ Deployed! Access at http://172.178.13.187/:9090/"
         }
     }
 }
