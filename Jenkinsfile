@@ -20,35 +20,29 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-        powershell '''
-          Set-Location "C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\Test"
+                powershell '''
+                  # Use Jenkins workspace
+                  Set-Location $env:WORKSPACE
 
-          # Kill old process on port 9090
-          Get-NetTCPConnection -LocalPort $env:APP_PORT -ErrorAction SilentlyContinue | ForEach-Object {
-              Stop-Process -Id $_.OwningProcess -Force
-          }
+                  # Kill old process on port if running
+                  $connections = Get-NetTCPConnection -LocalPort $env:APP_PORT -ErrorAction SilentlyContinue
+                  if ($connections) {
+                      $connections | ForEach-Object {
+                          try {
+                              Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
+                              Write-Output "Stopped process $($_.OwningProcess) on port $env:APP_PORT"
+                          } catch {
+                              Write-Output "Failed to stop process $($_.OwningProcess)"
+                          }
+                      }
+                  }
 
-          # Start new process
-          Start-Process java -ArgumentList "-cp", "out", "HelloWorldServer", $env:APP_PORT -NoNewWindow
-          Start-Sleep -Seconds 5
-          Write-Output "Server started on http://localhost:$env:APP_PORT (first run)"
-
-          # Simulate wait before restart (1 minute)
-          Write-Output "Waiting 60 seconds before restart..."
-          Start-Sleep -Seconds 60
-
-          # Kill again (in case updated file is detected)
-          Get-NetTCPConnection -LocalPort $env:APP_PORT -ErrorAction SilentlyContinue | ForEach-Object {
-              Stop-Process -Id $_.OwningProcess -Force
-          }
-
-          # Start process again
-          Start-Process java -ArgumentList "-cp", "out", "HelloWorldServer", $env:APP_PORT -NoNewWindow
-          Start-Sleep -Seconds 5
-          Write-Output "Server restarted on http://localhost:$env:APP_PORT (second run)"
-        '''
+                  # Start new Java server in background
+                  Start-Process java -ArgumentList "-cp", "$env:OUT_DIR", "HelloWorldServer", $env:APP_PORT -NoNewWindow
+                  Start-Sleep -Seconds 5
+                  Write-Output "Server started on http://localhost:$env:APP_PORT"
+                '''
+            }
         }
-      }
-
     }
 }
