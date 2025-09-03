@@ -20,19 +20,20 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                bat '''
-                  rem Kill process using port 9090 if running
-                  for /f "tokens=5" %%a in ('netstat -ano ^| findstr :%APP_PORT%') do taskkill /F /PID %%a
+        bat '''
+          rem Kill process using port 9090 if running (Jenkins has permission)
+          for /f "tokens=5" %%a in ('netstat -ano ^| findstr :%APP_PORT%') do taskkill /F /PID %%a
 
-                  rem Start new server in background
-                  start java -cp %OUT_DIR% HelloWorldServer %APP_PORT%
+          rem Start new server
+          start java -cp %OUT_DIR% HelloWorldServer %APP_PORT%
 
-                  rem Small wait using ping (instead of timeout)
-                  ping -n 5 127.0.0.1 >nul
+          rem Small wait
+          ping -n 5 127.0.0.1 >nul
 
-                  echo Server started on http://localhost:%APP_PORT%
-                '''
-            }
-        }
+          echo Server started on http://localhost:%APP_PORT%
+        '''
+    }
+}
+
     }
 }
