@@ -1,27 +1,21 @@
-package com.example;
-
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpExchange;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
+import java.io.*;
+import java.net.*;
 
 public class HelloWorldServer {
     public static void main(String[] args) throws Exception {
-        HttpServer server = HttpServer.create(new InetSocketAddress(9090), 0);
-        server.createContext("/", new HelloHandler());
-        server.setExecutor(null);
-        System.out.println("Server started at http://localhost:9090/");
-        server.start();
-    }
+        int port = (args.length > 0) ? Integer.parseInt(args[0]) : 9090;
+        ServerSocket serverSocket = new ServerSocket(port);
+        System.out.println("Server started at http://localhost:" + port);
 
-    static class HelloHandler implements HttpHandler {
-        public void handle(HttpExchange exchange) throws java.io.IOException {
-            String response = "HelloWorld....HI..";
-            exchange.sendResponseHeaders(200, response.getBytes().length);
-            OutputStream os = exchange.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
+        while (true) {
+            Socket client = serverSocket.accept();
+            PrintWriter out = new PrintWriter(client.getOutputStream(), true);
+            out.println("HTTP/1.1 200 OK");
+            out.println("Content-Type: text/html");
+            out.println();
+            out.println("<h1>Hello, World from Jenkins!</h1>");
+            out.flush();
+            client.close();
         }
     }
 }
