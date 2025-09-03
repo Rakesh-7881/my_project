@@ -24,11 +24,12 @@ pipeline {
           rem Kill process using port 9090 if running
           for /f "tokens=5" %%a in ('netstat -ano ^| findstr :%APP_PORT%') do taskkill /F /PID %%a
 
-          rem Change to workspace directory
-          cd /d C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\Test
+          rem Change to Jenkins workspace directory
+          cd /d "C:\ProgramData\Jenkins\.jenkins\workspace\Test"
 
           rem Start server in background
           start /b java -cp out HelloWorldServer %APP_PORT%
+
 
           rem Small wait
           ping -n 5 127.0.0.1 >nul
