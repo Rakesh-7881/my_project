@@ -18,27 +18,25 @@ pipeline {
                 '''
             }
         }
-       stage('Deploy') {
-           steps {
-        bat '''
-          rem Kill process using port 9090 if running
-          for /f "tokens=5" %%a in ('netstat -ano ^| findstr :%APP_PORT%') do taskkill /F /PID %%a
+        stage('Deploy') {
+            steps {
+                powershell '''
+                  Set-Location "C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\Test"
 
-          rem Change to Jenkins workspace directory
-          cd /d "C:\ProgramData\Jenkins\.jenkins\workspace\Test"
+                  # Kill old process on port 9090
+                  Get-NetTCPConnection -LocalPort $env:APP_PORT -ErrorAction SilentlyContinue | ForEach-Object {
+                      Stop-Process -Id $_.OwningProcess -Force
+                  }
 
-          rem Start server in background
-          start /b java -cp out HelloWorldServer %APP_PORT%
+                  # Start new process
+                  Start-Process java -ArgumentList "-cp", "out", "HelloWorldServer", $env:APP_PORT -NoNewWindow
 
+                  # Small wait
+                  Start-Sleep -Seconds 5
 
-          rem Small wait
-          ping -n 5 127.0.0.1 >nul
-
-          echo Server started on http://localhost:%APP_PORT%
-        '''
-    }
-}
-
-
+                  Write-Output "Server started on http://localhost:$env:APP_PORT"
+                '''
+            }
+        }
     }
 }
